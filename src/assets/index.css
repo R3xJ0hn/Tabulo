@@ -1,1 +1,145 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------
+   Scrollbar (optimized, minimal)
+--------------------------------------------- */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a88d47 transparent;
+  scroll-behavior: smooth;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d8bd71, #a88d47);
+  border-radius: 8px;
+  transition: background 0.25s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e0c77a, #c5a954);
+}
+
+
+/* ---------------------------------------------
+   Container
+--------------------------------------------- */
+.firefly-anchor {
+  position: absolute;
+  inset: 0;
+}
+.firefly-container {
+  pointer-events: none;
+  overflow: hidden;
+  will-change: transform;
+}
+
+
+/* ---------------------------------------------
+   Stars
+--------------------------------------------- */
+.starfield {
+  position: absolute;
+  inset: 0;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+
+  animation: starTwinkle var(--twinkle) ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.9); }
+  50%      { opacity: 1;    transform: scale(1.25); }
+}
+
+
+/* ---------------------------------------------
+   FIREFLIES
+--------------------------------------------- */
+.firefly {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  opacity: 0.8;
+  background: radial-gradient(
+    circle,
+    rgb(251, 239, 199) 0%,
+    rgba(248, 215, 133, 0.5) 35%,
+    rgba(255, 190, 70, 0.15) 70%,
+    rgba(255, 160, 50, 0.03) 100%
+  );
+
+
+  animation:
+    fireflyFloatUp 6s ease-in-out infinite,
+    fireflyBloom var(--bloom) ease-in-out infinite,
+    fireflyHue var(--hue) ease-in-out infinite;
+
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+
+@keyframes fireflyFloatUp {
+  0%   { transform: translate3d(0, 30px, 0); opacity: 0; }
+  20%  { opacity: 1; }
+  50%  { opacity: 0.5; }
+  70%  { opacity: 1; }
+  100% { transform: translate3d(0, -150px, 0); opacity: 0; }
+}
+
+@keyframes fireflyHue {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50%      { filter: hue-rotate(20deg); }
+}
+
+@keyframes fireflyBloom {
+  0%, 100% { box-shadow: 0 0 0px transparent; }
+  50%      { box-shadow: 0 0 14px rgba(255, 230, 180, 0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firefly,
+  .star {
+    animation: none !important;
+    opacity: 0.85;
+    transform: translate3d(0,0,0);
+  }
+}
+
+
+
+/* ---------------------------------------------
+   Glossy Sweep Highlight
+--------------------------------------------- */
+.glossy-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.glossy-sweep::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  animation: sweep 6s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0%   { transform: translateX(-150%) skewX(-20deg); opacity: 0.1; }
+  60%  { transform: translateX(150%) skewX(-20deg); opacity: 0.2; }
+  100% { transform: translateX(150%) skewX(-20deg); opacity: 0.1; }
+}
