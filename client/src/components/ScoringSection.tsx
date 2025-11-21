@@ -1,55 +1,23 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { InputScore } from "./ui/InputScore";
 
+import type { Criterion, Scores } from "../types/pageant";
+import { useAnimatedNumber } from "../hooks/useAnimatedNumber";
+
 /* -----------------------------
-   Types
+   PROPS TYPE
 ----------------------------- */
-
-type SubCriterion = { id: string; name: string; weight: number };
-type Criterion = {
-  id: string;
-  name: string;
-  weight: number;
-  subcriteria?: SubCriterion[];
-};
-
 type ScoringSectionProps = {
   criteria: Criterion[];
-  scores: Record<string, number>;
+  scores: Scores;
   handleScoreChange: (id: string, value: number) => void;
   highlightCategoryId?: string;
 };
 
 /* -----------------------------
-   Animated Number Hook
+   Component
 ----------------------------- */
-function useAnimatedNumber(value: number, speed = 150) {
-  const [display, setDisplay] = useState(value);
-
-  useEffect(() => {
-    let frame: number;
-
-    const animate = () => {
-      setDisplay((prev) => {
-        const diff = value - prev;
-        if (Math.abs(diff) < 0.05) return Number(value.toFixed(2));
-        return prev + (diff / speed) * 10;
-      });
-      frame = requestAnimationFrame(animate);
-    };
-
-    animate();
-    return () => cancelAnimationFrame(frame);
-  }, [value]);
-
-  return Number(display.toFixed(2));
-}
-
-/* -----------------------------
-   MAIN COMPONENT
------------------------------ */
-
 export default function ScoringSection({
   criteria,
   scores,
@@ -61,19 +29,12 @@ export default function ScoringSection({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  /* -----------------------------
-     Helpers
-  ----------------------------- */
-
   const getTotalWeight = (c: Criterion) =>
     c.subcriteria?.reduce((sum, s) => sum + s.weight, 0) ?? c.weight;
 
   const getParentScore = (c: Criterion) => {
     if (!c.subcriteria) return scores[c.id] ?? 0;
-    return c.subcriteria.reduce(
-      (sum, s) => sum + (scores[s.id] ?? 0),
-      0
-    );
+    return c.subcriteria.reduce((sum, s) => sum + (scores[s.id] ?? 0), 0);
   };
 
   const hasMissingSubScores = (c: Criterion) =>
@@ -86,7 +47,10 @@ export default function ScoringSection({
 
     setTimeout(() => {
       container.scrollBy({
-        top: target.getBoundingClientRect().top - container.getBoundingClientRect().top - 40,
+        top:
+          target.getBoundingClientRect().top -
+          container.getBoundingClientRect().top -
+          40,
         behavior: "smooth",
       });
     }, 300);
@@ -100,14 +64,9 @@ export default function ScoringSection({
     });
   };
 
-  /* -----------------------------
-     Overall Score
-  ----------------------------- */
-
   const rawOverall = useMemo(() => {
     let totalScore = 0;
     let totalWeight = 0;
-
     for (const c of criteria) {
       totalWeight += getTotalWeight(c);
       totalScore += getParentScore(c);
@@ -117,30 +76,20 @@ export default function ScoringSection({
 
   const overallScore = useAnimatedNumber(rawOverall);
 
-  /* -----------------------------
-     UI Classes
-  ----------------------------- */
-
   const inputClass =
     "w-36 text-center bg-[#0f0f0f] text-[#f7e9c2] rounded-xl px-4 py-2 shadow-[inset_0_0_8px_rgba(190,162,86,0.06)] focus:ring-2 focus:ring-[#bea256] text-xl";
 
-  /* -----------------------------
-     RENDER
-  ----------------------------- */
-
   return (
     <section className="h-full pb-4 bg-transparent">
-      {/* Header */}
-      <div className="sticky top-0 z-20  bg-[#1b1a1d]/95 border-b border-[#333233] flex items-center justify-between px-3 pb-2">
+      <div className="sticky top-0 z-20 bg-[#1b1a1d]/95 border-b border-[#333233] flex items-center justify-between px-3 pb-2">
         <h2 className="text-2xl font-bold tracking-wide text-[#bea256]">
           MY EVALUATION:
         </h2>
-        <span className="text-lg font-semibold text-[#f7e9c2] drop-shadow-[0_0_6px_#bea25666]">
+        <span className="text-lg font-semibold text-[#f7e9c2]">
           {overallScore.toFixed(2)}%
         </span>
       </div>
 
-      {/* List */}
       <div
         ref={scrollContainerRef}
         className="overflow-y-auto p-4 pt-5 custom-scrollbar h-3/6"
@@ -155,17 +104,24 @@ export default function ScoringSection({
 
           const wrapperClass = `
             py-4 px-4 rounded-xl transition-all duration-300 mb-3 relative  bg-[#1b1a1d]/95 border-b border-[#333233] 
-            ${isHighlighted ? "ring-2 ring-[#bcd4ff]" : isOpen ? "bg-[#191819] shadow-lg" : "hover:bg-[#141313]/60"}
+            ${
+              isHighlighted
+                ? "ring-2 ring-[#bcd4ff]"
+                : isOpen
+                ? "bg-[#191819] shadow-lg"
+                : "hover:bg-[#141313]/60"
+            }
             ${openCard && !isOpen && !isHighlighted ? "opacity-30" : ""}
           `;
 
           return (
             <div
               key={cr.id}
-              ref={(el) => {sectionRefs.current[cr.id] = el}}
+              ref={(el) => {
+                sectionRefs.current[cr.id] = el;
+              }}
               className={wrapperClass}
             >
-              {/* Header Button */}
               <button
                 onClick={() => toggleCard(cr.id)}
                 className="flex items-start justify-between w-full text-left"
@@ -215,37 +171,40 @@ export default function ScoringSection({
                 </div>
               </button>
 
-              {/* Expandable Content */}
-              <div
-                className={`transition-all overflow-hidden ${
-                  isOpen ? "max-h-[720px] mt-3 opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                {cr.subcriteria ? (
-                  <div className="space-y-3 mx-4 border-l border-[#2b2b2b] pl-4">
-                    {cr.subcriteria.map((sub) => (
+              {isOpen && (
+                <div
+                  className={`transition-all overflow-hidden ${
+                    isOpen
+                      ? "max-h-[720px] mt-3 opacity-100"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  {cr.subcriteria ? (
+                    <div className="space-y-3 mx-4 border-l border-[#2b2b2b] pl-4">
+                      {cr.subcriteria.map((sub) => (
+                        <InputScore
+                          key={sub.id}
+                          label={sub.name}
+                          weight={sub.weight}
+                          value={scores[sub.id]}
+                          onChange={(v) => handleScoreChange(sub.id, v)}
+                          inputClass={inputClass}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="ml-4 mt-2 mx-4 border-l border-[#2b2b2b] pl-4">
                       <InputScore
-                        key={sub.id}
-                        label={sub.name}
-                        weight={sub.weight}
-                        value={scores[sub.id]}
-                        onChange={(v) => handleScoreChange(sub.id, v)}
+                        label={cr.name}
+                        weight={cr.weight}
+                        value={scores[cr.id]}
+                        onChange={(v) => handleScoreChange(cr.id, v)}
                         inputClass={inputClass}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="ml-4 mt-2 mx-4 border-l border-[#2b2b2b] pl-4">
-                    <InputScore
-                      label={cr.name}
-                      weight={cr.weight}
-                      value={scores[cr.id]}
-                      onChange={(v) => handleScoreChange(cr.id, v)}
-                      inputClass={inputClass}
-                    />
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
