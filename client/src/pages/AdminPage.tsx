@@ -2,23 +2,26 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { usePageant } from "../context/PageantContext";
+
 import type { Candidate, Criterion } from "../types/pageant";
 
 import AdminNav from "../components/admin/AdminNav";
 import CandidatesList from "../components/admin/CandidatesList";
 import CandidateForm from "../components/admin/CandidateForm";
 import CriteriaList from "../components/admin/CriteriaList";
-import AddCriteriaForm from "../components/admin/AddCriteriaForm";
+import CriteriaForm from "../components/admin/CriteriaForm";
+import AdminJudgesTab from "../components/admin/JudgesTab";
 
 export default function AdminPage() {
   const API = "http://localhost:3000";
   const { role, logout } = usePageant();
 
-  const [activeTab, setActiveTab] = useState<"candidates" | "criteria">(
-    "candidates"
-  );
+  // 🔥 FIXED — Added "judges"
+  const [activeTab, setActiveTab] = useState<
+    "candidates" | "criteria" | "judges"
+  >("candidates");
 
-  // If not admin, block page
+  // Security guard
   if (role !== "admin") {
     window.location.href = "/";
     return null;
@@ -35,7 +38,7 @@ export default function AdminPage() {
   const loadCandidates = async () => {
     try {
       const res = await axios.get(`${API}/candidates`);
-      setCandidates(res.data); // IDs included but NOT shown on UI
+      setCandidates(res.data);
     } catch (err) {
       console.error("Failed to load candidates", err);
     }
@@ -61,15 +64,11 @@ export default function AdminPage() {
   };
 
   const deleteCandidate = async (id: number | string) => {
-    const confirmed = window.confirm(
-      "Delete this candidate? This cannot be undone."
-    );
-    if (!confirmed) return;
+    if (!window.confirm("Delete this candidate? This cannot be undone.")) return;
 
     try {
       await axios.delete(`${API}/candidates/${id}`);
 
-      // close edit if the deleted one is being edited
       if (editingCandidate && String(editingCandidate.id) === String(id)) {
         setEditingCandidate(null);
       }
@@ -84,6 +83,9 @@ export default function AdminPage() {
         CRITERIA
   ----------------------------------- */
   const [criteria, setCriteria] = useState<Criterion[]>([]);
+  const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(
+    null
+  );
 
   const loadCriteria = async () => {
     try {
@@ -94,7 +96,7 @@ export default function AdminPage() {
     }
   };
 
-  const saveCriteria = async (data: any) => {
+  const addCriterion = async (data: Criterion) => {
     try {
       await axios.post(`${API}/criteria`, data);
       loadCriteria();
@@ -103,8 +105,35 @@ export default function AdminPage() {
     }
   };
 
+  const updateCriterion = async (id: string, data: Criterion) => {
+    try {
+      await axios.put(`${API}/criteria/${id}`, data);
+      setEditingCriterion(null);
+      loadCriteria();
+    } catch (err) {
+      console.error("Failed to update criteria", err);
+    }
+  };
+
+  const deleteCriterion = async (id: string) => {
+    if (!window.confirm("Delete this criterion? This action cannot be undone."))
+      return;
+
+    try {
+      await axios.delete(`${API}/criteria/${id}`);
+
+      if (editingCriterion && editingCriterion.id === id) {
+        setEditingCriterion(null);
+      }
+
+      loadCriteria();
+    } catch (err) {
+      console.error("Failed to delete criterion", err);
+    }
+  };
+
   /* -----------------------------------
-        INITIAL LOAD
+        LOAD DATA ON START
   ----------------------------------- */
   useEffect(() => {
     loadCandidates();
@@ -113,11 +142,7 @@ export default function AdminPage() {
 
   return (
     <div className="h-screen bg-[#1b1a1d] text-[#d8bd71] px-10 py-5">
-      <AdminNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        logout={logout}
-      />
+      <AdminNav activeTab={activeTab} setActiveTab={setActiveTab} logout={logout} />
 
       {/* --------------------- CANDIDATES TAB --------------------- */}
       {activeTab === "candidates" && (
@@ -145,10 +170,28 @@ export default function AdminPage() {
       {/* --------------------- CRITERIA TAB --------------------- */}
       {activeTab === "criteria" && (
         <div className="grid grid-cols-2 gap-10">
-          <CriteriaList criteria={criteria} />
-          <AddCriteriaForm onSave={saveCriteria} />
+          <CriteriaList
+            criteria={criteria}
+            onEdit={setEditingCriterion}
+            onDelete={deleteCriterion}
+          />
+
+          <CriteriaForm
+            initialData={editingCriterion}
+            onSubmit={(data) => {
+              if (editingCriterion) {
+                updateCriterion(editingCriterion.id, data);
+              } else {
+                addCriterion(data);
+              }
+            }}
+            onCancel={() => setEditingCriterion(null)}
+          />
         </div>
       )}
+
+      {/* --------------------- JUDGES TAB --------------------- */}
+      {activeTab === "judges" && <AdminJudgesTab />}
     </div>
   );
 }

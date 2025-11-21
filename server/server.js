@@ -8,6 +8,7 @@ import candidateRoutes from "./routes/candidates.js";
 import criteriaRoutes from "./routes/criteria.js";
 import scoreRoutes from "./routes/scores.js";
 import authRoutes from "./routes/auth.js";
+import judgesRouter from "./routes/judges.js";
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/auth", authRoutes);
 app.use("/candidates", candidateRoutes);
 app.use("/criteria", criteriaRoutes);
 app.use("/scores", scoreRoutes);
+app.use("/judges", judgesRouter);
 
 
 app.get("/", (req, res) => {

@@ -22,7 +22,6 @@ router.post("/login", (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!user) return res.status(401).json({ error: "Invalid login" });
 
-      // Compare password
       bcrypt.compare(password, user.password, (err2, same) => {
         if (err2) return res.status(500).json({ error: err2.message });
         if (!same) return res.status(401).json({ error: "Invalid login" });
@@ -35,7 +34,7 @@ router.post("/login", (req, res) => {
 
         res.json({
           token,
-          role: user.role,   // "admin" or "judge"
+          role: user.role,
           userId: user.id,
         });
       });

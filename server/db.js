@@ -49,6 +49,7 @@ subcriteria TEXT
 )
 `);
 
+
 db.run(`
 CREATE TABLE IF NOT EXISTS judge_scores (
 candidate_id INTEGER,

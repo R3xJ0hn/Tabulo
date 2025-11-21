@@ -71,6 +71,7 @@ export default function ScoringSection({
       totalWeight += getTotalWeight(c);
       totalScore += getParentScore(c);
     }
+
     return totalWeight ? (totalScore / totalWeight) * 100 : 0;
   }, [criteria, scores]);
 
@@ -80,6 +81,7 @@ export default function ScoringSection({
     "w-36 text-center bg-[#0f0f0f] text-[#f7e9c2] rounded-xl px-4 py-2 shadow-[inset_0_0_8px_rgba(190,162,86,0.06)] focus:ring-2 focus:ring-[#bea256] text-xl";
 
   return (
+    
     <section className="h-full pb-4 bg-transparent">
       <div className="sticky top-0 z-20 bg-[#1b1a1d]/95 border-b border-[#333233] flex items-center justify-between px-3 pb-2">
         <h2 className="text-2xl font-bold tracking-wide text-[#bea256]">

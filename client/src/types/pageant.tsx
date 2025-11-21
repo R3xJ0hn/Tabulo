@@ -21,3 +21,11 @@ export type Candidate = {
 };
 
 export type Scores = Record<string, number>;
+
+
+export type Judge = {
+  id: number;
+  name: string;
+  username: string;
+  password?: string;
+};
