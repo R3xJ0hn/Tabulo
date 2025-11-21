@@ -1,10 +1,24 @@
 import { PageantProvider, usePageant } from "./context/PageantContext";
-import JudgePage from "./pages/JudgePage";
 import LoginPage from "./pages/LoginPage";
+import AdminPage from "./pages/AdminPage";
+import JudgePage from "./pages/JudgePage";
 
 function Router() {
-  const { token } = usePageant();
-  return token ? <JudgePage /> : <LoginPage />;
+  const { token, role } = usePageant();
+
+  if (!token || !role) {
+    return <LoginPage />;
+  }
+
+  if (role === "admin") {
+    return <AdminPage />;
+  }
+
+  if (role === "judge") {
+    return <JudgePage />;
+  }
+
+  return <LoginPage />;
 }
 
 export default function App() {

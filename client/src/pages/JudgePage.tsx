@@ -17,7 +17,15 @@ export default function JudgePageLayout() {
     updateScore,
     loadScoresFromDB,
     saveScoresToDB,
+    logout,
+    role,            // 🔥 IMPORTANT: include role
   } = usePageant();
+
+  // 🚨 BLOCK ADMIN OR LOGGED-OUT USERS
+  if (role !== "judge") {
+    window.location.href = "/";
+    return null;
+  }
 
   // ------------------------------
   // CATEGORY FILTER
@@ -46,7 +54,7 @@ export default function JudgePageLayout() {
   // Auto-save scores to DB when scores change
   useEffect(() => {
     if (!selectedCandidate) return;
-    saveScoresToDB(selectedCandidate.id); 
+    saveScoresToDB(selectedCandidate.id);
   }, [scores]);
 
   const [activeTab, setActiveTab] = useState<
@@ -80,13 +88,16 @@ export default function JudgePageLayout() {
 
         {/* CANDIDATE LIST */}
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 sm:grid-cols-3 gap-6">
-          <FireflyField count={150} />
+ <div className="pointer-events-none absolute inset-0">
+  <FireflyField count={150} />
+</div>
+
 
           {filteredCandidates.map((c) => (
             <div
               key={c.id}
               onClick={() => setSelectedCandidate(c)}
-              className={`relative cursor-pointer rounded-xl border overflow-hidden transition-all duration-300 group hover:shadow-[0_0_10px_#bea25640]   h-[255px] ${
+              className={`relative cursor-pointer rounded-xl border overflow-hidden transition-all duration-300 group hover:shadow-[0_0_10px_#bea25640] h-[255px] ${
                 selectedCandidate?.id === c.id
                   ? "border-[#d8bd71] scale-[1.03] shadow-[0_0_5px_#d8bd71]"
                   : "border-[#3a393b] hover:border-[#bea256]"
@@ -143,7 +154,10 @@ export default function JudgePageLayout() {
             ))}
           </ul>
 
-          <button className="bg-[#d8bd71] text-[#1b1a1d] px-5 py-2 rounded-full font-semibold  hover:bg-[#bea256] shadow-[0_0_10px_#bea25660] transition">
+          <button
+            onClick={() => logout()}
+            className="bg-[#d8bd71] text-[#1b1a1d] px-5 py-2 rounded-full font-semibold hover:bg-[#bea256] shadow-[0_0_10px_#bea25660] transition"
+          >
             Logout
           </button>
         </nav>
@@ -173,7 +187,6 @@ export default function JudgePageLayout() {
               </div>
             </section>
 
-            {/* 🔥 SCORING COMPONENT (hook integrated) */}
             <ScoringSection
               criteria={criteria}
               scores={scores}

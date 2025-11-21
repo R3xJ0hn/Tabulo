@@ -19,6 +19,16 @@ const db = new sqlite3.Database(DB_FILE);
 
 // Initialize tables
 db.serialize(() => {
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT -- "admin" or "judge"
+  )
+`);
+
 db.run(`
 CREATE TABLE IF NOT EXISTS candidates (
 id INTEGER PRIMARY KEY,
@@ -30,7 +40,6 @@ img TEXT
 )
 `);
 
-
 db.run(`
 CREATE TABLE IF NOT EXISTS criteria (
 id TEXT PRIMARY KEY,
@@ -39,16 +48,6 @@ weight INTEGER,
 subcriteria TEXT
 )
 `);
-
-
-db.run(`
-CREATE TABLE IF NOT EXISTS judges (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-username TEXT UNIQUE,
-password TEXT
-)
-`);
-
 
 db.run(`
 CREATE TABLE IF NOT EXISTS judge_scores (

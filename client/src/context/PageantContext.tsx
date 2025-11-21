@@ -10,6 +10,7 @@ type PageantContextType = {
 
   token: string | null;
   judgeId: number | null;
+  role: string | null;   // ✅ ADDED
 
   setSelectedCandidate: (c: Candidate) => void;
   updateScore: (criterionId: string, value: number) => void;
@@ -17,7 +18,7 @@ type PageantContextType = {
   loadScoresFromDB: (candidateId: number) => Promise<void>;
   saveScoresToDB: (candidateId: number) => Promise<void>;
 
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<string>; // ✅ FIXED
   logout: () => void;
 };
 
@@ -30,7 +31,8 @@ export const PageantProvider = ({ children }: { children: React.ReactNode }) => 
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<Candidate | null>(null);
   const [scores, setScores] = useState<Scores>({});
 
   // ------------------------------
@@ -41,7 +43,13 @@ export const PageantProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const [judgeId, setJudgeId] = useState<number | null>(
-    localStorage.getItem("judgeId") ? Number(localStorage.getItem("judgeId")) : null
+    localStorage.getItem("judgeId")
+      ? Number(localStorage.getItem("judgeId"))
+      : null
+  );
+
+  const [role, setRole] = useState<string | null>(
+    localStorage.getItem("role") || null
   );
 
   // Axios instance with token
@@ -50,14 +58,14 @@ export const PageantProvider = ({ children }: { children: React.ReactNode }) => 
   });
 
   axiosAuth.interceptors.request.use((config) => {
-  if (token) {
-    config.headers = config.headers || new axios.AxiosHeaders();
-    (config.headers as any).set
-      ? (config.headers as any).set("Authorization", `Bearer ${token}`)
-      : ((config.headers as any)["Authorization"] = `Bearer ${token}`);
-  }
-  return config;
-});
+    if (token) {
+      config.headers = config.headers || new axios.AxiosHeaders();
+      (config.headers as any).set
+        ? (config.headers as any).set("Authorization", `Bearer ${token}`)
+        : ((config.headers as any)["Authorization"] = `Bearer ${token}`);
+    }
+    return config;
+  });
 
   // ------------------------------
   // Initial load: candidates & criteria
@@ -106,29 +114,46 @@ export const PageantProvider = ({ children }: { children: React.ReactNode }) => 
   }
 
   // ------------------------------
-  // Login judge
+  // LOGIN (Admin OR Judge)
   // ------------------------------
-  async function login(username: string, password: string) {
+  async function login(username: string, password: string): Promise<string> {
     const res = await axios.post(`${API}/auth/login`, {
       username,
       password,
     });
 
-    setToken(res.data.token);
-    setJudgeId(res.data.judgeId);
+    const { token, role, userId } = res.data;
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("judgeId", String(res.data.judgeId));
+    setToken(token);
+    setRole(role);
+
+    // Save judgeId ONLY for judges
+    if (role === "judge") {
+      setJudgeId(userId);
+      localStorage.setItem("judgeId", String(userId));
+    }
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    localStorage.setItem("userId", String(userId));
+
+    return role;
   }
 
   // ------------------------------
-  // Logout judge
+  // LOGOUT
   // ------------------------------
   function logout() {
     setToken(null);
     setJudgeId(null);
+    setRole(null);
+
     localStorage.removeItem("token");
     localStorage.removeItem("judgeId");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+
+    window.location.href = "/";
   }
 
   // ------------------------------
@@ -142,6 +167,7 @@ export const PageantProvider = ({ children }: { children: React.ReactNode }) => 
 
         token,
         judgeId,
+        role,
 
         setSelectedCandidate,
         updateScore,

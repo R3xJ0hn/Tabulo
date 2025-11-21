@@ -2,6 +2,9 @@ import db from "./db.js";
 import bcrypt from "bcrypt";
 
 
+const salt = await bcrypt.genSalt(10);
+const hashed = await bcrypt.hash("1234", salt);
+
 /* -----------------------------------------------------------
    CANDIDATES DATA
 ----------------------------------------------------------- */
@@ -72,19 +75,27 @@ const criteria = [
   { id: "J", name: "Q & A", weight: 15 },
 ];
 
+const users = [
+  { username: "admin", password: hashed, role: "admin" },
+  { username: "judge", password: hashed, role: "judge" },
+];
 
 async function seedDatabase() {
 console.log("Starting database seeding...");
-
-const salt = await bcrypt.genSalt(10);
-const hashed = await bcrypt.hash("1234", salt);
-
 
 db.serialize(() => {
 db.run("DELETE FROM candidates");
 db.run("DELETE FROM criteria");
 db.run("DELETE FROM judge_scores");
-db.run("DELETE FROM judges");
+db.run("DELETE FROM users");
+
+const stmt = db.prepare(`
+  INSERT INTO users (username, password, role)
+  VALUES (?, ?, ?)
+`);
+
+users.forEach((u) => stmt.run(u.username, u.password, u.role));
+stmt.finalize();
 
 
 const stmt1 = db.prepare(`
@@ -96,8 +107,6 @@ VALUES (?, ?, ?, ?, ?, ?)
 candidates.forEach((c) => {
 stmt1.run(c.id, c.number, c.name, c.category, c.representing, c.img);
 });
-
-
 stmt1.finalize();
 
 
@@ -115,14 +124,8 @@ c.weight,
 c.subcriteria ? JSON.stringify(c.subcriteria) : null
 );
 });
-
-
 stmt2.finalize();
 
-
-const stmt3 = db.prepare(`INSERT INTO judges (username, password) VALUES (?, ?)`);
-stmt3.run("judge1", hashed);
-stmt3.finalize();
 
 
 console.log("==> Seeding complete!");
